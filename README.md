@@ -13,10 +13,10 @@ None
 
 ## Role Variables
 
-| Variable           | required | default                          | choices | comments |
-| ------------------ | -------- | -------------------------------- | ------- | -------- |
-| ip_link_name       | no       | {{ ansible_default_ipv4.alias }} |         | The link to the NIC to be tuned |
-| ip_link_txqueuelen | no       | 1000                             |         | The number of packets the transmission queue the NIC's transmission will hold |
+| Variable           | Required | Default                        | Choices | Comments |
+| ------------------ | -------- | ------------------------------ | ------- | -------- |
+| ip_link_name       | no       | {{ansible_default_ipv4.alias}} |         | The link to the NIC to be tuned |
+| ip_link_txqueuelen | no       | 1000                           |         | The number of packets the transmission queue the NIC's transmission will hold |
 
 
 ## Dependencies
