@@ -1,5 +1,5 @@
 # ansible-ip
-[![Build Status](https://travis-ci.org/Cyverse-Ansible/ansible-ip.svg?branch=master)](https://travis-ci.org/Cyverse-Ansible/ansible-ip)
+[![Build Status](https://travis-ci.org/CyVerse-Ansible/ansible-ip.svg?branch=master)](https://travis-ci.org/Cyverse-Ansible/ansible-ip)
 
 An ansible role for using the ip command to manipulate devices, policies, routing, and tunnels.
 
