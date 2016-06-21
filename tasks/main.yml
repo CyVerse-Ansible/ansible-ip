@@ -1,0 +1,21 @@
+---
+# tasks file for ansible-ip
+
+- name: Set transmission queue length
+  shell: |
+    IFS= read <<< $(ip link show {{ nic_tuner_link }})
+    qlen=${REPLY##*qlen }
+    if [ "$qlen" -ne {{ nic_tuner_txqueuelen }} ]
+    then
+      ip link set {{ nic_tuner_link }} txqueuelen {{ nic_tuner_txqueuelen }}
+      printf 'changed\n'
+    fi
+  register: result
+  changed_when: result.stdout == "changed"
+
+- name: Ensure correct transmission queue length on reboot
+  lineinfile:
+    dest: /etc/rc.local
+    regexp: ip link set {{ nic_tuner_link }} txqueuelen
+    line: ip link set {{ nic_tuner_link }} txqueuelen {{ nic_tuner_txqueuelen }}
+
