@@ -3,11 +3,11 @@
 
 - name: Set transmission queue length
   shell: |
-    IFS= read <<< $(ip link show {{ nic_tuner_link }})
+    IFS= read <<< $(ip link show {{ ip_link_name }})
     qlen=${REPLY##*qlen }
-    if [ "$qlen" -ne {{ nic_tuner_txqueuelen }} ]
+    if [ "$qlen" -ne {{ ip_link_txqueuelen }} ]
     then
-      ip link set {{ nic_tuner_link }} txqueuelen {{ nic_tuner_txqueuelen }}
+      ip link set {{ ip_link_name }} txqueuelen {{ ip_link_txqueuelen }}
       printf 'changed\n'
     fi
   register: result
@@ -16,6 +16,6 @@
 - name: Ensure correct transmission queue length on reboot
   lineinfile:
     dest: /etc/rc.local
-    regexp: ip link set {{ nic_tuner_link }} txqueuelen
-    line: ip link set {{ nic_tuner_link }} txqueuelen {{ nic_tuner_txqueuelen }}
+    regexp: ip link set {{ ip_link_name }} txqueuelen
+    line: ip link set {{ ip_link_name }} txqueuelen {{ ip_link_txqueuelen }}
 
