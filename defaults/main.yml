@@ -1,8 +1,4 @@
 ---
 # defaults file for ansible-ip
 
-# The link to the NIC to be tuned
 ip_link_name: "{{ ansible_default_ipv4.alias }}"
-
-# The number of packets the transmission queue the NIC's transmission will hold
-ip_link_txqueuelen: 1000

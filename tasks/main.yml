@@ -1,21 +1,64 @@
 ---
 # tasks file for ansible-ip
 
-- name: Set transmission queue length
+- name: Verify not attempting to take down the current link
+  assert:
+    that: 
+      - 'ansible_default_ipv4.alias is not defined or ip_link_name != ansible_default_ipv4.alias or ip_link_up is not defined or ip_link_up'
+    msg: cannot take down {{ ip_link_name }}, ansible is using it
+
+- name: gather link information
   shell: |
-    IFS= read <<< $(ip link show {{ ip_link_name }})
-    qlen=${REPLY##*qlen }
-    if [ "$qlen" -ne {{ ip_link_txqueuelen }} ]
+    read -r no name flags mtuLbl mtu qdiscLbl qdisc stateLbl state qlenLbl qlen ether <<< \
+      $(ip link show {{ ip_link_name }})
+
+    if [ "$state" == UP ]
     then
-      ip link set {{ ip_link_name }} txqueuelen {{ ip_link_txqueuelen }}
-      printf 'changed\n'
+      up=true
+    else
+      up=false
     fi
+
+    printf '{ "up":%s, "txqueuelen":%d }\n' "$up" "$qlen"
   register: result
-  changed_when: result.stdout == "changed"
+  changed_when: false
 
-- name: Ensure correct transmission queue length on reboot
-  lineinfile:
-    dest: /etc/rc.local
-    regexp: ip link set {{ ip_link_name }} txqueuelen
-    line: ip link set {{ ip_link_name }} txqueuelen {{ ip_link_txqueuelen }}
+- name: store link info
+  set_fact:
+    ip_current_link: "{{ result.stdout | from_json }}"
 
+- when: ip_link_txqueuelen is defined 
+  block:
+    - name: Set {{ ip_link_name }} transmission queue length
+      shell: ip link set {{ ip_link_name }} txqueuelen {{ ip_link_txqueuelen }}
+      changed_when: ip_link_txqueuelen != ip_current_link.txqueuelen
+
+    - name: Ensure correct transmission queue length on reboot
+      lineinfile:
+        dest: /etc/rc.local
+        regexp: ip link set {{ ip_link_name }} txqueuelen
+        line: ip link set {{ ip_link_name }} txqueuelen {{ ip_link_txqueuelen }}
+      changed_when: ip_link_txqueuelen != ip_current_link.txqueuelen
+
+- when: ip_link_up is defined
+  block:
+    - name: Ensure correct state on reboot
+      lineinfile:
+        dest: /etc/sysconfig/network-scripts/ifcfg-{{ ip_link_name }}
+        regexp: ^ONBOOT=
+        line: ONBOOT={{ 'yes' if ip_link_up else 'no' }}    
+
+    - name: Set {{ ip_link_name }} state
+      shell: |
+        if [ '{{ ip_link_up | lower }}' != '{{ ip_current_link.up }}' ]
+        then
+          if [ '{{ ip_link_up | lower }}' == true ]
+          then
+            state=up
+          else
+            state=down
+          fi
+
+          ip link set {{ ip_link_name }} "$state"
+        fi
+      changed_when: ip_link_up != ip_current_link.up

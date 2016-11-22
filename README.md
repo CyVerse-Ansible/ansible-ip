@@ -3,20 +3,21 @@
 
 An ansible role for using the ip command to manipulate devices, policies, routing, and tunnels.
 
-At the moment, it can only be used to set the transmission queue length for a given link to a NIC. In the future, it should be expanded to support all of the features of the `ip` command.
+At the moment, it can only works with network devices. It can only bring up or down a given device and change a device's transmit queue length. In the future, it should be expanded to support all of the features of the `ip` command.
 
 
 ## Requirements
 
-None
+The hosts need to have libselinux-python installed.
 
 
 ## Role Variables
 
 Variable             | Required | Default                      | Choices | Comments
 -------------------- | -------- | ---------------------------- | ------- | --------
-`ip_link_name`       | no       | `ansible_default_ipv4.alias` |         | the link to the NIC to be tuned
-`ip_link_txqueuelen` | no       | 1000                         |         | the number of packets the NIC's transmission queue ill hold
+`ip_link_name`       | no       | `ansible_default_ipv4.alias` |         | the name of the network device to modify
+`ip_link_txqueuelen` | no       |                              |         | if present, the new transmit queue length
+`ip_link_up`         | no       |                              | no, yes | if present, whether or not the device is to be up
 
 
 ## Dependencies
@@ -26,11 +27,10 @@ None
 
 ## Example Playbook
 ```yaml
-- hosts: 10000Mb/s
+- hosts: 10000Mbit/s
   become: true
-  gather_facts: true
   roles:
-    - role: ansible-ip
+    - role: CyVerse-Ansible.ip
       ip_link_txqueuelen: 10000
 ```
 
