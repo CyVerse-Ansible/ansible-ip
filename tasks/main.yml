@@ -8,18 +8,7 @@
     msg: cannot take down {{ ip_link_name }}, ansible is using it
 
 - name: gather link information
-  shell: |
-    read -r no name flags mtuLbl mtu qdiscLbl qdisc stateLbl state qlenLbl qlen ether <<< \
-      $(ip link show {{ ip_link_name }})
-
-    if [ "$state" == UP ]
-    then
-      up=true
-    else
-      up=false
-    fi
-
-    printf '{ "up":%s, "txqueuelen":%d }\n' "$up" "$qlen"
+  link_show: "{{ ip_link_name }}"
   register: result
   changed_when: false
 

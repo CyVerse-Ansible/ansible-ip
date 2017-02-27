@@ -1,0 +1,62 @@
+#! /bin/bash
+
+readonly Device="$1"
+
+read -r no name flags mtuLbl mtu qdiscLbl qdisc stateLbl state qlenLbl qlen ether \
+  < <(ip link show "$Device")
+
+if [ "$state" == UP ]
+then
+  up=true
+else
+  up=false
+fi
+
+if [[ "$flags" =~ NOARP ]]
+then
+  arp=false
+else
+  arp=true
+fi
+
+if [[ "$flags" =~ PROMISC ]]
+then
+  promisc=true
+else
+  promisc=false
+fi
+
+if [[ "$flags" =~ ALLMULTI ]]
+then
+  allmulticast=true
+else
+  allmulticast=false
+fi
+
+if [[ "$flags" =~ DYNAMIC ]]
+then
+  dynamic=true
+else
+  dynamic=false
+fi
+
+if [[ "$flags" =~ MULTICAST ]]
+then
+  multicast=true
+else
+  multicast=false
+fi
+
+cat <<JSON
+{ 
+  "up": $up,
+  "name": "$name", 
+  "allmulticast": $allmulticast,
+  "arp": $arp,
+  "dynamic": $dynamic,
+  "mtu": $mtu,
+  "multicast": $multicast,
+  "promisc": $promisc,
+  "txqueuelen": $qlen
+}
+JSON
