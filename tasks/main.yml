@@ -27,7 +27,7 @@
   set_fact:
     ip_current_link: "{{ result.stdout | from_json }}"
 
-- when: ip_link_txqueuelen is defined 
+- when: ip_link_txqueuelen is defined and ip_link_txqueuelen != none
   block:
     - name: Set {{ ip_link_name }} transmission queue length
       shell: ip link set {{ ip_link_name }} txqueuelen {{ ip_link_txqueuelen }}
@@ -40,7 +40,7 @@
         line: ip link set {{ ip_link_name }} txqueuelen {{ ip_link_txqueuelen }}
       changed_when: ip_link_txqueuelen != ip_current_link.txqueuelen
 
-- when: ip_link_up is defined
+- when: ip_link_up is defined and ip_link_up != none
   block:
     - name: Ensure correct state on reboot
       lineinfile:
