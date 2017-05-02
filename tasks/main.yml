@@ -9,8 +9,10 @@
 
 - name: gather link information
   shell: |
-    read -r no name flags mtuLbl mtu qdiscLbl qdisc stateLbl state qlenLbl qlen ether <<< \
-      $(ip link show {{ ip_link_name }})
+    read -r no name flags params <<< $(ip link show {{ ip_link_name }})
+    mtu=$(sed --quiet 's/.*mtu \([^ ]*\).*/\1/p' <<< "$params")
+    state=$(sed --quiet 's/.*state \([^ ]*\).*/\1/p' <<< "$params")
+    qlen=$(sed --quiet 's/.*qlen \([^ ]*\).*\/\1/p' <<< "$params")
 
     if [ "$state" == UP ]
     then
@@ -21,12 +23,12 @@
     
     if [[ "$flags" =~ NOARP ]]
     then
-      arpVal=false
+      arp=false
     else
-      arpVal=true
+      arp=true
     fi
 
-    printf '{ "up":%s, "arp":%s, "mtu":%d, "txqueuelen":%d }\n' "$up" "$arpVal" "$mtu" "$qlen"
+    printf '{ "up":%s, "arp":%s, "mtu":%d, "txqueuelen":%d }\n' "$up" "$arp" "$mtu" "$qlen"
   register: result
   changed_when: false
 
