@@ -19,14 +19,14 @@
       up=false
     fi
     
-    if [[ "$flags" ~= NOARP ]]
+    if [[ "$flags" =~ NOARP ]]
     then
       arpVal=false
     else
       arpVal=true
     fi
 
-    printf '{ "up":%s, "arp":%s, "mtu":%d "txqueuelen":%d }\n' "$up" "$arpVal" "$mtu" "$qlen"
+    printf '{ "up":%s, "arp":%s, "mtu":%d, "txqueuelen":%d }\n' "$up" "$arpVal" "$mtu" "$qlen"
   register: result
   changed_when: false
 
