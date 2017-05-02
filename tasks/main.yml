@@ -26,7 +26,7 @@
       arpVal=true
     fi
 
-    printf '{ "up":%s, "arp":%s, "txqueuelen":%d }\n' "$up" "$arpVal" "$qlen"
+    printf '{ "up":%s, "arp":%s, "mtu":%d "txqueuelen":%d }\n' "$up" "$arpVal" "$mtu" "$qlen"
   register: result
   changed_when: false
 
@@ -34,11 +34,22 @@
   set_fact:
     ip_current_link: "{{ result.stdout | from_json }}"
 
-- when: ip_link_arp is defined and ip_link_arp != none
+- name: Set {{ ip_link_name }} NOARP flag
+  when: ip_link_arp is defined and ip_link_arp != none
+  shell: ip link set {{ ip_link_name }} arp {{ 'on' if ip_link_arp else 'off' }}
+  changed_when: ip_link_arp != ip_current_link.arp
+
+- when: ip_link_mtu is defined and ip_link_mtu != none
   block:
-    - name: Set {{ ip_link_name }} NOARP flag
-      shell: ip link set {{ ip_link_name }} arp {{ 'on' if ip_link_arp else 'off' }}
-      changed_when: ip_link_arp != ip_current_link.arp
+    - name: Set {{ ip_link_name }} MTU
+      shell: ip link set {{ ip_link_name }} mtu {{ ip_link_mtu }}
+      changed_when: ip_link_mtu != ip_current_link.mtu
+
+    - name: Ensure correct MTU on network restart
+      lineinfile:
+        dest: /etc/sysconfig/network-scripts/ifcfg-{{ ip_link_name }}
+        regexp: ^MTU=
+        line: MTU={{ ip_link_mtu }}
 
 - when: ip_link_txqueuelen is defined and ip_link_txqueuelen != none
   block:

@@ -15,7 +15,8 @@ The hosts need to have libselinux-python installed.
 
 Variable             | Required | Default                      | Choices     | Comments
 -------------------- | -------- | ---------------------------- | ----------- | --------
-`ip_link_arp`        | no       |                              | true, false | whether or not to enable ARP
+`ip_link_arp`        | no       |                              | true, false | if present, whether or not to enable ARP
+`ip_link_mtu`        | no       |                              |             | if present, then new MTU
 `ip_link_name`       | no       | `ansible_default_ipv4.alias` |             | the name of the network device to modify
 `ip_link_txqueuelen` | no       |                              |             | if present, the new transmit queue length
 `ip_link_up`         | no       |                              | no, yes     | if present, whether or not the device is to be up
