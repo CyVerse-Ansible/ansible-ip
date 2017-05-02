@@ -18,14 +18,27 @@
     else
       up=false
     fi
+    
+    if [[ "$flags" ~= NOARP ]]
+    then
+      arpVal=false
+    else
+      arpVal=true
+    fi
 
-    printf '{ "up":%s, "txqueuelen":%d }\n' "$up" "$qlen"
+    printf '{ "up":%s, "arp":%s, "txqueuelen":%d }\n' "$up" "$arpVal" "$qlen"
   register: result
   changed_when: false
 
 - name: store link info
   set_fact:
     ip_current_link: "{{ result.stdout | from_json }}"
+
+- when: ip_link_arp is defined and ip_link_arp != none
+  block:
+    - name: Set {{ ip_link_name }} NOARP flag
+      shell: ip link set {{ ip_link_name }} arp {{ 'on' if ip_link_arp else 'off' }}
+      changed_when: ip_link_arp != ip_current_link.arp
 
 - when: ip_link_txqueuelen is defined and ip_link_txqueuelen != none
   block:
