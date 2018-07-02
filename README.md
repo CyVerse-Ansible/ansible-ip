@@ -39,9 +39,11 @@ None
 
 ## License
 
-BSD
+See [license](/LICENSE.txt)
 
 
 ## Author Information
 
 Tony Edgin
+<tedgin@cyverse.org>
+[CyVerse](https://cyverse.org)
