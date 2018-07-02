@@ -1,5 +1,6 @@
 # ansible-ip
 [![Build Status](https://travis-ci.org/CyVerse-Ansible/ansible-ip.svg?branch=master)](https://travis-ci.org/CyVerse-Ansible/ansible-ip)
+[![Ansible Galaxy](https://img.shields.io/badge/role-CyVerse__Ansible.ip-blue.svg)](https://galaxy.ansible.com/CyVerse_Ansible/ip/)
 
 An ansible role for using the ip command to manipulate devices, policies, routing, and tunnels.
 
@@ -32,7 +33,7 @@ None
 - hosts: 10000Mbit/s
   become: true
   roles:
-    - role: CyVerse-Ansible.ip
+    - role: CyVerse_Ansible.ip
       ip_link_txqueuelen: 10000
 ```
 
@@ -44,4 +45,3 @@ BSD
 ## Author Information
 
 Tony Edgin
-
