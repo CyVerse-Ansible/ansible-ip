@@ -44,6 +44,6 @@ See [license](/LICENSE.txt)
 
 ## Author Information
 
-Tony Edgin
-<tedgin@cyverse.org>
+Tony Edgin  
+<tedgin@cyverse.org>  
 [CyVerse](https://cyverse.org)
