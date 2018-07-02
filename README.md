@@ -39,7 +39,7 @@ None
 
 ## License
 
-See [license](/LICENSE.txt)
+See [license](/LICENSE.txt).
 
 
 ## Author Information
