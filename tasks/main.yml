@@ -3,7 +3,7 @@
 
 - name: Verify not attempting to take down the current link
   assert:
-    that: 
+    that:
       - 'ansible_default_ipv4.alias is not defined or ip_link_name != ansible_default_ipv4.alias or ip_link_up is not defined or ip_link_up'
     msg: cannot take down {{ ip_link_name }}, ansible is using it
 
@@ -12,7 +12,7 @@
     read -r no name flags params <<< $(ip link show {{ ip_link_name }})
     mtu=$(sed --quiet 's/.*mtu \([^ ]*\).*/\1/p' <<< "$params")
     state=$(sed --quiet 's/.*state \([^ ]*\).*/\1/p' <<< "$params")
-    qlen=$(sed --quiet 's/.*qlen \([^ ]*\).*\/\1/p' <<< "$params")
+    qlen=$(sed --quiet 's/.*qlen \([^ ]*\).*/\1/p' <<< "$params")
 
     if [ "$state" == UP ]
     then
@@ -20,7 +20,7 @@
     else
       up=false
     fi
-    
+
     if [[ "$flags" =~ NOARP ]]
     then
       arp=false
@@ -72,7 +72,7 @@
       lineinfile:
         dest: /etc/sysconfig/network-scripts/ifcfg-{{ ip_link_name }}
         regexp: ^ONBOOT=
-        line: ONBOOT={{ 'yes' if ip_link_up else 'no' }}    
+        line: ONBOOT={{ 'yes' if ip_link_up else 'no' }}
 
     - name: Set {{ ip_link_name }} state
       shell: |
