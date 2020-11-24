@@ -9,10 +9,11 @@
 
 - name: gather link information
   shell: |
-    read -r no name flags params <<< $(ip link show {{ ip_link_name }})
-    mtu=$(sed --quiet 's/.*mtu \([^ ]*\).*/\1/p' <<< "$params")
-    state=$(sed --quiet 's/.*state \([^ ]*\).*/\1/p' <<< "$params")
-    qlen=$(sed --quiet 's/.*qlen \([^ ]*\).*/\1/p' <<< "$params")
+    linkDetails=$(ip link show {{ ip_link_name }})
+    flags=$(echo "$linkDetails" | sed --quiet 's/.* \(<[^>]*>\).*/\1/p')
+    mtu=$(echo "$linkDetails" | sed --quiet 's/.*mtu \([^ ]*\).*/\1/p')
+    state=$(echo "$linkDetails" | sed --quiet 's/.*state \([^ ]*\).*/\1/p')
+    qlen=$(echo "$linkDetails" | sed --quiet 's/.*qlen \([^ ]*\).*/\1/p')
 
     if [ "$state" == UP ]
     then
@@ -47,7 +48,15 @@
       shell: ip link set {{ ip_link_name }} mtu {{ ip_link_mtu }}
       changed_when: ip_link_mtu != ip_current_link.mtu
 
-    - name: Ensure correct MTU on network restart
+    - name: Ensure correct MTU on network restart for Ubuntu
+      when: ansible_distribution == 'Ubuntu'
+      lineinfile:
+        dest: /etc/network/interfaces
+        regexp: /usr/sbin/ip link set {{ ip_link_name }} mtu
+        line: post-up /usr/sbin/ip link set {{ ip_link_name }} mtu {{ ip_link_mtu }}
+
+    - name: Ensure correct MTU on network restart for other than Ubuntu
+      when: ansible_distribution != 'Ubuntu'
       lineinfile:
         dest: /etc/sysconfig/network-scripts/ifcfg-{{ ip_link_name }}
         regexp: ^MTU=
@@ -61,9 +70,10 @@
 
     - name: Ensure correct transmission queue length on reboot
       lineinfile:
-        dest: /etc/rc.local
-        regexp: ip link set {{ ip_link_name }} txqueuelen
-        line: ip link set {{ ip_link_name }} txqueuelen {{ ip_link_txqueuelen }}
+        dest: "{{ '/etc/network/interfaces' if ansible_distribution == 'Ubuntu' else
+                  '/etc/rc.local' }}"
+        regexp: /usr/sbin/ip link set {{ ip_link_name }} txqueuelen
+        line: /usr/sbin/ip link set {{ ip_link_name }} txqueuelen {{ ip_link_txqueuelen }}
       changed_when: ip_link_txqueuelen != ip_current_link.txqueuelen
 
 - when: ip_link_up is defined and ip_link_up != none
