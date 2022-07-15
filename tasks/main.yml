@@ -3,33 +3,33 @@
 
 - name: Verify not attempting to take down the current link
   assert:
-    that:
-      - 'ansible_default_ipv4.alias is not defined or ip_link_name != ansible_default_ipv4.alias or ip_link_up is not defined or ip_link_up'
+    that: >-
+      ansible_default_ipv4.alias is not defined
+      or ip_link_name != ansible_default_ipv4.alias
+      or ip_link_up is not defined or ip_link_up
     msg: cannot take down {{ ip_link_name }}, ansible is using it
 
 - name: gather link information
   shell: |
-    linkDetails=$(ip link show {{ ip_link_name }})
-    flags=$(echo "$linkDetails" | sed --quiet 's/.* \(<[^>]*>\).*/\1/p')
-    mtu=$(echo "$linkDetails" | sed --quiet 's/.*mtu \([^ ]*\).*/\1/p')
-    state=$(echo "$linkDetails" | sed --quiet 's/.*state \([^ ]*\).*/\1/p')
-    qlen=$(echo "$linkDetails" | sed --quiet 's/.*qlen \([^ ]*\).*/\1/p')
-
-    if [ "$state" == UP ]
-    then
+    set -o pipefail
+    linkDetails="$(ip link show {{ ip_link_name }})"
+    flags="$(echo "$linkDetails" | sed --quiet 's/.* \(<[^>]*>\).*/\1/p')"
+    mtu="$(echo "$linkDetails" | sed --quiet 's/.*mtu \([^ ]*\).*/\1/p')"
+    state="$(echo "$linkDetails" | sed --quiet 's/.*state \([^ ]*\).*/\1/p')"
+    qlen="$(echo "$linkDetails" | sed --quiet 's/.*qlen \([^ ]*\).*/\1/p')"
+    if [[ "$state" == UP ]]; then
       up=true
     else
       up=false
     fi
-
-    if [[ "$flags" =~ NOARP ]]
-    then
+    if [[ "$flags" =~ NOARP ]]; then
       arp=false
     else
       arp=true
     fi
-
     printf '{ "up":%s, "arp":%s, "mtu":%d, "txqueuelen":%d }\n' "$up" "$arp" "$mtu" "$qlen"
+  args:
+    executable: /bin/bash
   register: result
   changed_when: false
 
@@ -39,13 +39,13 @@
 
 - name: Set {{ ip_link_name }} NOARP flag
   when: ip_link_arp is defined and ip_link_arp != none
-  shell: ip link set {{ ip_link_name }} arp {{ 'on' if ip_link_arp else 'off' }}
+  command: ip link set {{ ip_link_name }} arp {{ 'on' if ip_link_arp else 'off' }}
   changed_when: ip_link_arp != ip_current_link.arp
 
 - when: ip_link_mtu is defined and ip_link_mtu != none
   block:
     - name: Set {{ ip_link_name }} MTU
-      shell: ip link set {{ ip_link_name }} mtu {{ ip_link_mtu }}
+      command: ip link set {{ ip_link_name }} mtu {{ ip_link_mtu }}
       changed_when: ip_link_mtu != ip_current_link.mtu
 
     - name: Ensure correct MTU on network restart for Ubuntu < 20.04
@@ -74,7 +74,7 @@
 - when: ip_link_txqueuelen is defined and ip_link_txqueuelen != none
   block:
     - name: Set {{ ip_link_name }} transmission queue length
-      shell: ip link set {{ ip_link_name }} txqueuelen {{ ip_link_txqueuelen }}
+      command: ip link set {{ ip_link_name }} txqueuelen {{ ip_link_txqueuelen }}
       changed_when: ip_link_txqueuelen != ip_current_link.txqueuelen
 
     - name: Ensure correct transmission queue length on reboot
@@ -95,15 +95,12 @@
 
     - name: Set {{ ip_link_name }} state
       shell: |
-        if [ '{{ ip_link_up | lower }}' != '{{ ip_current_link.up }}' ]
-        then
-          if [ '{{ ip_link_up | lower }}' == true ]
-          then
+        if [[ '{{ ip_link_up | lower }}' != '{{ ip_current_link.up }}' ]]; then
+          if [[ '{{ ip_link_up | lower }}' == true ]]; then
             state=up
           else
             state=down
           fi
-
           ip link set {{ ip_link_name }} "$state"
         fi
       changed_when: ip_link_up != ip_current_link.up
