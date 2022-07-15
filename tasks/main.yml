@@ -48,12 +48,23 @@
       shell: ip link set {{ ip_link_name }} mtu {{ ip_link_mtu }}
       changed_when: ip_link_mtu != ip_current_link.mtu
 
-    - name: Ensure correct MTU on network restart for Ubuntu
-      when: ansible_distribution == 'Ubuntu'
+    - name: Ensure correct MTU on network restart for Ubuntu 18.04
+      when: >-
+        ansible_distribution == 'Ubuntu' 
+        and version_compare(ansible_distribution_version, '20.04', '<') 
       lineinfile:
         dest: /etc/network/interfaces
         regexp: /usr/sbin/ip link set {{ ip_link_name }} mtu
         line: post-up /usr/sbin/ip link set {{ ip_link_name }} mtu {{ ip_link_mtu }}
+
+    - name: Ensure correct MTU on network restart for Ubuntu 20.04
+      when: >-
+        ansible_distribution == 'Ubuntu'
+        and version_compare(ansible_distribution_version, '20.04', '>=')
+      ansible.builtin.template:
+        src: etc/netplan/mtu.yaml.j2
+        dest: /etc/netplan/{{ ip_mtu_netplan_file }}
+TODO finish
 
     - name: Ensure correct MTU on network restart for other than Ubuntu
       when: ansible_distribution != 'Ubuntu'
