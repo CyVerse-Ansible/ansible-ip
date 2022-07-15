@@ -2,3 +2,5 @@
 # defaults file for ansible-ip
 
 ip_link_name: "{{ ansible_default_ipv4.alias }}"
+
+ip_netplan_mtu_file: /etc/netplan/mtu.yaml
