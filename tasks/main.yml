@@ -2,7 +2,7 @@
 # tasks file for ansible-ip
 
 - name: Verify not attempting to take down the current link
-  assert:
+  ansible.builtin.assert:
     that: >-
       ansible_default_ipv4.alias is not defined
       or ip_link_name != ansible_default_ipv4.alias
@@ -10,7 +10,7 @@
     msg: cannot take down {{ ip_link_name }}, ansible is using it
 
 - name: gather link information
-  shell: |
+  ansible.builtin.shell: |
     set -o pipefail
     linkDetails="$(ip link show {{ ip_link_name }})"
     flags="$(echo "$linkDetails" | sed --quiet 's/.* \(<[^>]*>\).*/\1/p')"
@@ -34,29 +34,29 @@
   changed_when: false
 
 - name: store link info
-  set_fact:
+  ansible.builtin.set_fact:
     ip_current_link: "{{ result.stdout | from_json }}"
 
 - name: Set {{ ip_link_name }} NOARP flag
   when: ip_link_arp is defined and ip_link_arp != none
-  command: ip link set {{ ip_link_name }} arp {{ 'on' if ip_link_arp else 'off' }}
+  ansible.builtin.command: ip link set {{ ip_link_name }} arp {{ 'on' if ip_link_arp else 'off' }}
   changed_when: ip_link_arp != ip_current_link.arp
 
 - when: ip_link_mtu is defined and ip_link_mtu != none
   block:
     - name: Set {{ ip_link_name }} MTU
-      command: ip link set {{ ip_link_name }} mtu {{ ip_link_mtu }}
+      ansible.builtin.command: ip link set {{ ip_link_name }} mtu {{ ip_link_mtu }}
       changed_when: ip_link_mtu != ip_current_link.mtu
 
     - name: Ensure correct MTU on network restart for Ubuntu < 20.04
       when: >-
         ansible_distribution == 'Ubuntu' and ansible_distribution_version is version('20.04', '<')
-      lineinfile:
+      ansible.builtin.lineinfile:
         dest: /etc/network/interfaces
         regexp: /usr/sbin/ip link set {{ ip_link_name }} mtu
         line: post-up /usr/sbin/ip link set {{ ip_link_name }} mtu {{ ip_link_mtu }}
 
-    - name: Ensure correct MTU on network restart for Ubuntu 20.04 and later
+    - name: Ensure correct MTU on network restart for Ubuntu 20.04 or later
       when: >-
         ansible_distribution == 'Ubuntu' and ansible_distribution_version is version('20.04', '>=')
       ansible.builtin.template:
@@ -66,7 +66,7 @@
 
     - name: Ensure correct MTU on network restart for other than Ubuntu
       when: ansible_distribution != 'Ubuntu'
-      lineinfile:
+      ansible.builtin.lineinfile:
         dest: /etc/sysconfig/network-scripts/ifcfg-{{ ip_link_name }}
         regexp: ^MTU=
         line: MTU={{ ip_link_mtu }}
@@ -74,13 +74,24 @@
 - when: ip_link_txqueuelen is defined and ip_link_txqueuelen != none
   block:
     - name: Set {{ ip_link_name }} transmission queue length
-      command: ip link set {{ ip_link_name }} txqueuelen {{ ip_link_txqueuelen }}
+      ansible.builtin.command: ip link set {{ ip_link_name }} txqueuelen {{ ip_link_txqueuelen }}
       changed_when: ip_link_txqueuelen != ip_current_link.txqueuelen
 
-    - name: Ensure correct transmission queue length on reboot
-      lineinfile:
-        dest: "{{ '/etc/network/interfaces' if ansible_distribution == 'Ubuntu' else
-                  '/etc/rc.local' }}"
+    - name: Ensure correct transmission queue length on reboot for Ubuntu 20.04 or later
+      when: >-
+        ansible_distribution == 'Ubuntu' and ansible_distribution_version is version('20.04', '>=')
+      ansible.builtin.template:
+        src: etc/udev/rules.d/txqueuelen.rules.j2
+        dest: "{{ ip_udev_txqueuelen_file }}"
+        mode: u+r
+
+    - name: Ensure correct transmission queue length on reboot for Ubuntu < 20.04 or other linux
+      when: >-
+        - ansible_distribution != 'Ubuntu'
+        - ansible_distribution == 'Ubuntu' and ansible_distribution_version is version('20.04', '<')
+      ansible.builtin.lineinfile:
+        dest: >-
+          {{ '/etc/network/interfaces' if ansible_distribution == 'Ubuntu' else '/etc/rc.local' }}
         regexp: /usr/sbin/ip link set {{ ip_link_name }} txqueuelen
         line: /usr/sbin/ip link set {{ ip_link_name }} txqueuelen {{ ip_link_txqueuelen }}
       changed_when: ip_link_txqueuelen != ip_current_link.txqueuelen
@@ -88,13 +99,13 @@
 - when: ip_link_up is defined and ip_link_up != none
   block:
     - name: Ensure correct state on reboot
-      lineinfile:
+      ansible.builtin.lineinfile:
         dest: /etc/sysconfig/network-scripts/ifcfg-{{ ip_link_name }}
         regexp: ^ONBOOT=
         line: ONBOOT={{ 'yes' if ip_link_up else 'no' }}
 
     - name: Set {{ ip_link_name }} state
-      shell: |
+      ansible.builtin.shell: |
         if [[ '{{ ip_link_up | lower }}' != '{{ ip_current_link.up }}' ]]; then
           if [[ '{{ ip_link_up | lower }}' == true ]]; then
             state=up

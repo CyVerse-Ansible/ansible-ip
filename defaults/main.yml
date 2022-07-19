@@ -3,4 +3,6 @@
 
 ip_link_name: "{{ ansible_default_ipv4.alias }}"
 
-ip_netplan_mtu_file: /etc/netplan/mtu.yaml
+ip_netplan_mtu_file: /etc/netplan/50-mtu.yaml
+
+ip_udev_txqueuelen_file: /etc/udev/rules.d/50-txqueuelen.rules
