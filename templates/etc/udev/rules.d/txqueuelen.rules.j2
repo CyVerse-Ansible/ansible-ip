@@ -1,0 +1,4 @@
+{{ ansible_mananged | comment }}
+
+SUBSYSTEM=="net", KERNEL=="{{ ip_link_name }}", ACTION=="add|change",  \
+   ATTR{tx_queue_len}="{{ ip_link_txqueuelen }}"
