@@ -1,6 +1,0 @@
----
-- hosts: localhost
-  become: true
-  roles:
-    - role: ansible-ip
-      ip_link_up: false
