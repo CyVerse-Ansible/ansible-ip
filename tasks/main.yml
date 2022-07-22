@@ -86,7 +86,7 @@
         mode: u+r
 
     - name: Ensure correct transmission queue length on reboot for Ubuntu < 20.04 or other linux
-      when: >-
+      when:
         - ansible_distribution != 'Ubuntu'
         - ansible_distribution == 'Ubuntu' and ansible_distribution_version is version('20.04', '<')
       ansible.builtin.lineinfile:
